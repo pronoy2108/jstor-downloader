@@ -1,0 +1,3 @@
+selenium
+webdrivermanager
+pypdf2
