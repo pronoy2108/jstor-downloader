@@ -1,5 +1,4 @@
-#Created by Timothy Gamble
-
+#!/usr/bin/python3
 import os
 import re
 import time
@@ -12,29 +11,32 @@ from PyPDF2 import PdfFileMerger, PdfFileReader, PdfFileWriter
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
 
-profile = webdriver.FirefoxProfile()
-profile.set_preference("pdfjs.disabled", True)
-profile.set_preference("browser.download.folderList",2)
-profile.set_preference("browser.helperApps.alwaysAsk.force", False)
-profile.set_preference("browser.download.manager.showWhenStarting",False)
-profile.set_preference("browser.download.dir", "/Users/Tim/Documents/Github/jstor-downloader/temp") #Point this to the temp folder
-profile.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/pdf")
-profile.set_preference("plugin.disable_full_page_plugin_for_types", "application/pdf")
-driver = webdriver.Firefox(firefox_profile=profile)
+options = webdriver.ChromeOptions()
+options.binary_location = "/usr/bin/vivaldi"
+options.pdfjs_disabled = True
+options.browser_download_folderList =2
+options.browser_helperApps_alwaysAsk_force = False
+options.browser_download_manager_showWhenStarting = False
+options.browser_download_dir = "./temp"
+options.browser_helperApps_neverAsk_saveToDisk = "application/pdf"
+options.plugin_disable_full_page_plugin_for_types = "application/pdf"
+driver = webdriver.Chrome('./chromedriver', options=options)
 
 __MAINURL__ = "https://www.jstor.org/action/showLogin?redirectUri=/?&loginSuccess=true&aerror=I001"
 __BROWSEURL__ = "http://www.jstor.org/action/showJournals?browseType=title&contentType=books&letter=0-9"
-__USERNAME__ = raw_input('Username: ')
+__USERNAME__ = input('Username: ')
 __PASSWORD__ = getpass.getpass('Password: ')
 
-def login(): #Edit the login process for your school, mine is UIUC
+
+def login():
 	driver.get(__MAINURL__)
-	driver.find_element(By.XPATH,'//*[@id="inst_container"]/table/tbody/tr[212]/td[2]/a').click()
+	# driver.find_element(By.XPATH,'//*[@id="inst_container"]/table/tbody/tr[212]/td[2]/a').click()
 	time.sleep(5)
 	driver.find_element(By.XPATH,'//input[@id="j_username"]').send_keys(__USERNAME__)
 	driver.find_element(By.XPATH,'//input[@id="j_password"]').send_keys(__PASSWORD__)
 	driver.find_element(By.XPATH,'//div[@id="submit_button"]/input').click()
 	time.sleep(5)
+
 
 def get_parent_links():
 	driver.find_element(By.XPATH,'//*[@id="menu-global-browse"]').click()
@@ -47,6 +49,7 @@ def get_parent_links():
 		parent_links.append(a.get_attribute('href'))
 	return parent_links
 
+
 def get_book_links():
 	book_links = []
 	for link in get_parent_links():
@@ -57,6 +60,7 @@ def get_book_links():
 			book_links.append(a.get_attribute('href'))
 	with open('book_links.json','w') as output:
 		json.dump(book_links, output)
+
 
 def download_book(url):
 	driver.get(url)
@@ -72,9 +76,11 @@ def download_book(url):
 		time.sleep(5)
 		merge_pdf(url,isbn)
 
+
 def key_func(afilename):
 	nondigits = re.compile("\D")
 	return int(nondigits.sub("", afilename))
+
 
 def merge_pdf(url,isbn):
 	name = url.split('/')[-1]
@@ -92,6 +98,7 @@ def merge_pdf(url,isbn):
 		os.remove(f)
 	crop_pdf(isbn)
 
+
 def crop_pdf(isbn):
 	input1 = PdfFileReader(file(os.getcwd() + "/books/" + isbn + ".pdf", "rb"))
 	output = PdfFileWriter()
@@ -105,12 +112,14 @@ def crop_pdf(isbn):
 	output.write(outputStream)
 	outputStream.close()
 
+
 def download_all_books():
 	with open('book_links.json','r') as links:
 		book_links = json.loads(links.read())
 		for link in book_links:
 			download_book(link)
 
+			
 if __name__ == '__main__':
 	login()
 	# get_book_links() #Comment this out after you gathered all of the book links.
